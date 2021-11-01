@@ -1,0 +1,110 @@
+import 'GAME.ecore'
+
+package gAME
+
+context Game
+-- example invariant with a custom error message to verify that
+-- the 'feature' property of all 'undefined_root_package_name::Example' instances is non-null
+	inv NonNullEmpty_name('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		Game.name <> null and Game.name <> ''
+	inv NonNull_player('The \'player\' property of "' + self.toString() + '" is null'):
+		Player  <> null	
+	inv NonNull_places('The \'places\' property of "' + self.toString() + '" are null'):
+		Place -> count(null) = 0	
+	inv NonNull_Knowledges('The \'Knowledge\' property of "' + self.toString() + '" are  null'):
+		Knowledge -> count(null)=0	
+	inv NonNull_People('The \'png\' property of "' + self.toString() + '" is  null'):
+		Png -> count(null)=0	
+	inv NonNull_Items('The \'items\' property of "' + self.toString() + '" is  null'):
+		Item -> count(null)=0
+	-- E8
+ 	inv OneStart('There are more than one place where the player can start'): 
+ 		self.start -> size() = 1
+ 	inv ManyPlacesToFinish : self.finish -> size() >= 1
+ 	-- E25 L’explorateur doit choisir une action ou quitter l’interaction s’il s’agit d’un choix de fin.
+ 	inv Quitter : let a = Choice -> select(co|co.oclIsTypeOf(Choice))
+                                -> collect(co|co.oclAsType(Choice))
+                                -> select(l| l.finish = true)
+                                -> size() >= 0 in 
+             let b = Place -> select(co|co.oclIsTypeOf(Place ))
+                                -> collect(co|co.oclAsType(Place))
+                                -> select(l| l = self.finish)
+                                -> size() >= 0 in  (a implies b)
+    inv startWithoutArcIn : let a = self.start in  (Place -> select(co|co.oclIsTypeOf(Place ))
+                                -> collect(co|co.oclAsType(Place))
+                                -> select(l| l.arc_in = null)
+                                -> size() >= 0)
+ 	 
+context Player	
+	inv NonNull_name('The \'name\' property of "' + self.toString() + '" is  null or Empty'):
+		name <> null and name <> ''	
+	inv NonNull_Connaissances('The \'Knowledge\' property of "' + self.toString() + '" are  null'):
+		Knowledge -> count(null)=0	
+	inv NonNull_Items('The \'items\' property of "' + self.toString() + '" is  null'):
+		Item -> count(null)=0
+-- E6 Le nombre d’objets que peut posséder un explorateur est limité par la taille cumulée des
+-- objets possédés.
+	inv SizeLimit_items('The player\'s items number exceed the max number'):
+		self.unityitem -> iterate(i : Item; sum: Integer = 0 | sum + i.size) <= self.inventorySize
+		
+	
+--inv: let poidsTot = items.size-> sum() in poidsTot <= sizeMax
+
+context Place
+	inv NonNull_Placename('The \'name\' property of "' + self.toString() + '" is  null or Empty'):
+		name <> null and name <> ''	
+	inv notSameName('There are two people have the same name'):
+	    png-> forAll(a,b|a.name = b.name implies a = b)
+
+	inv notSameCondition('There are two conditions the same'): 
+	    Condition -> forAll(a,b|a.name = b.name implies a = b)
+context Knowledge
+	inv NonNull_Knowledge('The \'name\' property of "' + self.toString() + '" is  null or Empty'):
+		name <> null and name <> ''		
+	inv NonNull_Description('The \'name\' property of "' + self.toString() + '" is null or empty '):
+		Description <> null and Description <> ''		 
+		
+context Png 
+	inv NonNull_Itemsname('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		name <> null and name <> ''		
+	inv NonNull_Description('The \'name\' property of "' + self.toString() + '" is null or empty '):
+		Description <> null and Description <> ''
+		
+context Item
+	inv NonNull_Itemsname('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		name <> null and name <> ''
+	inv NonNull_Description('The \'name\' property of "' + self.toString() + '" is null or empty '):
+		Description <> null and Description <> ''	
+	inv PosivityOfSize : size >= 0 
+
+-- Visibility is a boolean so no need to write = 0 or 1
+context Condition 
+	inv NonNull_ConditionName('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		name <> null and name <> ''
+	inv NonNull_Description('The \'name\' property of "' + self.toString() + '" is null or empty '):
+		Description <> null and Description <> ''
+	
+		
+context Arc 
+	--inv NonNull_Arcname('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		--name <> null and name <> ''
+	inv NonNull_Description('The \'name\' property of "' + self.toString() + '" is null or empty '):
+		Description <> null and Description <> ''
+		
+context Action
+	inv NonNull_Actionname('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		name <> null and name <> ''	
+		
+context Interaction 
+	inv NonNull_Interactionname('The \'name\' property of "' + self.toString() + '" is null or Empty'):
+		name <> null and name <> ''	
+	inv  notSameAction('There are two conditions the same'): 
+		Choice -> forAll(a,b|a.actions = a.actions implies a = b)
+	
+context Choice
+
+	inv notSameCondition('There are two conditions the same'):
+		 Condition-> forAll(a,b|a.name = b.name implies a = b)		
+	
+
+endpackage

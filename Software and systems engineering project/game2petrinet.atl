@@ -1,0 +1,222 @@
+module Game2PetriNet;
+create OUT: petrinet from IN: game;
+
+helper context game!GameElement
+def: getGame(): game!Game =
+	game!Game.allInstances()
+	-> select(g | g.gameElements->includes(self))-> asSequence()->first();
+
+helper context game!Place
+def: isInitial(): Integer = 
+    if (self.name = self.getGame().start.name) then 1
+        else 0 endif;
+
+helper context game!Choice
+def: getInteraction(): game!Interaction =
+	game!Interaction.allInstances()
+	-> select(i | i.choices->includes(self))-> asSequence()->first();
+
+helper context game!Interaction
+def: getPng(): game!Png =
+	game!Png.allInstances()
+	-> select(p | p.interactions ->includes(self))-> asSequence()->first();
+
+-- Traduire un Game en un PetriNet de même nom
+rule Game2PetriNet {
+	from g: game!Game
+	to pn: petrinet!PetriNet (
+		nom <- g.name,
+		petrielement <- petrinet!Place.allInstances(),
+		petrielement <- petrinet!Transition.allInstances(),
+		arc <- petrinet!Arc.allInstances())		
+}
+
+	
+rule Player2PetriNet {
+	from p: game!Player
+	to
+	p_player: petrinet!Place (
+		nom <- p.name,
+		nbJetons <- p.inventorySize,
+		net <- p.getGame())
+}
+
+rule Interaction2PetriNet {
+	from i: game!Interaction
+	to
+	p_interaction : petrinet!Place (
+		nom <- i.name,
+		nbJetons <- 0,		
+		net <- (i.getPng()).getGame()),
+	arc_P2I : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- i.getPng(),
+		cible <- p_interaction,
+		net <- (i.getPng()).getGame())
+}
+
+
+rule Place2PetriNet {
+	from pl: game!Place
+	to
+		p_place: petrinet!Place(
+			nom <- pl.name,
+			nbJetons <- pl.isInitial())
+	do {
+		for (p in pl.png) {
+			thisModule.PlaceToPng(p_place,p,pl);
+		}
+	}					
+}
+
+rule ChoiceToPlace(c : game!Choice,p : petrinet!Place, pl: game!Place) {
+	to arc_C2P : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- thisModule.Choice(c),
+		cible <- p,
+		net <- pl.getGame())
+}
+
+rule PlaceToPng(p: petrinet!Place,png: game!Png, pl:game!Place) {
+	to 
+}
+
+rule UnityItem2PetriNet {
+	from ui : game!UnityItem
+	to 
+	p_item :petrinet!Place (
+		nom <- ui.unity.name,
+		nbJetons <- ui.Occurence,
+		net <- ui.unity.getGame())
+}
+
+rule UnityKnowledge2PetriNet {
+	from uk : game!UnityKnowledge
+	to 
+	p_kld :petrinet!Place (
+		nom <- uk.unity.name,
+		nbJetons <- uk.Occurence,
+		net <- uk.unity.getGame())
+}
+
+
+rule Person2PetriNet {
+	from p : game!Png
+	to
+	tr_png : petrinet!Transition (
+		nom <- p.name,
+		net <- p.getGame()),
+	arc_P2P: petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		cible <- tr_png,
+		source <- thisModule.resolveTemp(p.place,'p_place'),
+		net <- p.getGame())
+	
+}
+
+rule PersonToInteraction(t:petrinet!Transition,i:game!Interaction,png:game!Png) {
+	to 
+	arc_inter:petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- t,
+		cible <- thisModule.resolveTemp(i,'p_interaction'),
+		net <- png.getGame())
+}
+
+
+
+rule Choice2PetriNet {
+	from c : game!Choice
+	to
+	tr_choice: petrinet!Transition (
+		nom <- c.name,
+		net <- c.place.getGame()),
+	arc_C2P : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- tr_choice,
+		cible <- c.place,
+		net <- c.place.getGame()),
+	arc_P2C : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- thisModule.resolveTemp(c.getInteraction(),'p_interaction'),
+		cible <- tr_choice,
+		net <- c.place.getGame())
+	
+}
+
+rule ItemToChoice(t:petrinet!Transition,i:game!UnityItem) {
+	to arc_i2c : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- thisModule.UnityItem(i),
+		cible <- t,
+		net <- i.getGame())
+}
+		
+		
+rule ChoiceToItem(t:petrinet!Transition,i:game!UnityItem) {
+	to arc_i2c : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		cible <- thisModule.UnityItem(i),
+		source <- t,
+		net <- i.getGame())
+}
+
+rule ChoiceToKnowledge(t:petrinet!Transition,k:game!UnityKnowledge) {
+	to arc_i2c : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		cible <- thisModule.UnityKnowledge(k),
+		source <- t,
+		net <- k.getGame())
+}
+
+rule ArcToPetriNet {
+	from a : game!Arc
+	to 
+	tr_arc : petrinet!Transition (
+		nom <- a.name),
+	p_visible : petrinet!Place (
+		nom <- a.name + 'Visible',
+		nbJetons <- if (a.visibility) then 1
+					else 0 endif,
+		net <- a.getGame()),
+	p_open : petrinet!Place (
+		nom <- a.name + 'Open',
+		nbJetons <- if (a.open) then 1
+					else 0 endif,
+		net <- a.getGame()),
+	arc_visibilty : petrinet!Arc (
+		poids <- 1,
+		arcType <- #read_arc,
+		source <- p_visible,
+		cible <- tr_arc,
+		net <- a.getGame()),
+	arc_open : petrinet!Arc (
+		poids <- 1,
+		arcType <- #read_arc,
+		source <- p_open,
+		cible <- tr_arc,
+		net <- a.getGame()),
+	arc_toPlace : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		source <- tr_arc,
+		cible <- thisModule.resolveTemp(a.target,'p_place'),
+		net <- a.getGame()),
+	arc_to : petrinet!Arc (
+		poids <- 1,
+		arcType <- #normal,
+		cible <- tr_arc,
+		source <- thisModule.resolveTemp(a.origin,'p_place'),
+		net <- a.getGame())	
+}
+
+

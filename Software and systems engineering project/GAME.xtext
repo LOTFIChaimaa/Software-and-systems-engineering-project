@@ -1,0 +1,142 @@
+grammar fr.n7.GAME with org.eclipse.xtext.common.Terminals
+
+generate gAME "http://www.n7.fr/GAME"
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+Game:
+	'Game' name=ID
+	'{'	
+		(gameElements+= GameElement)*		
+		'start' start=[Place]
+		'finish' '(' finish+=[Place] ( "," finish+=[Place|ID])* ')' 
+	'}';
+
+GameElement : Player | Place  | Item | UnityItem | UnityKnowledge | Knowledge | Arc | Png | Condition | Choice;
+
+Player:
+	'Player' name=ID
+	'{'
+		'inventorySize' inventorySize=INT
+		('sizeMax' sizeMax = INT)?
+		('unityitem' '(' unityitem+=[UnityItem] ( "," unityitem+=[UnityItem])* ')' )?
+		('unityknowledge' '(' unityknowledge+=[UnityKnowledge] ( "," unityknowledge+=[UnityKnowledge])* ')' )?
+		'currentPlace' currentPlace=[Place|ID] 
+	'}';
+
+Place:
+	'Place' name=ID
+	'{'
+		('pngs' '(' png+=[Png|ID] ( "," png+=[Png|ID])* ')' )?
+		('unityitem' '(' unityitem+=[UnityItem] ( "," unityitem+=[UnityItem])* ')' )?
+		('unityknowledge' '(' unityknowledge+=[UnityKnowledge] ( "," unityknowledge+=[UnityKnowledge])* ')' )?
+		('arc_in' '(' arc_in+=[Arc|ID] ( "," arc_in+=[Arc|ID])* ')' )?
+		('arc_out' '(' arc_out+=[Arc|ID] ( "," arc_out+=[Arc|ID])* ')' )?
+		('DepositItemConditions' '(' DepositItemConditions+= Condition ( "," DepositItemConditions+= Condition)* ')' )?
+		(description= Description)?
+	'}';
+
+Knowledge:
+	'Knowledge' name=ID
+	'{'
+		(visibility?='visibility')?
+		('VisibilityConditions' '(' VisibilityConditions+= Condition ( "," VisibilityConditions+= Condition)* ')' )?
+		description= Description
+	'}';
+
+Png:
+	'Png' name=ID
+	'{'
+		visibility?='visibility'
+		('VisibilityConditions' '(' VisibilityConditions+= Condition ( "," VisibilityConditions+= Condition)* ')' )?
+		('interactions' '(' interactions+= Interaction ( "," interactions+= Interaction)* ')' )?
+		description= Description
+		'place' place=[Place]
+	'}';
+
+Item:
+	'Item' name=ID
+	'{'
+		(visibility?='visibility')?
+		('size' size=INT)?
+		('VisibilityConditions' '(' VisibilityConditions+= Condition ( "," VisibilityConditions+= Condition )* ')' )?
+		description= Description
+	'}';
+	
+	
+UnityItem:
+	'UnityItem' name=ID
+	'{'
+		'Occurence' Occurence=INT
+		'unity' unity=[Item]
+	'}';
+
+UnityKnowledge:
+	'UnityKnowledge' name=ID
+	'{'
+		'Occurence' Occurence=INT
+		'unity' unity=[Knowledge]
+	'}';
+
+Arc:
+	'Arc' name=ID
+	'{'
+		(visibility?='visibility')?
+		('VisibilityConditions' '(' VisibilityConditions+= Condition ( "," VisibilityConditions+= Condition )* ')' )?
+		(open?='open')?
+		'target' target=[Place|ID]
+		'origin' origin=[Place|ID]
+		description= Description
+		('exchanges' '(' exchanges+= Exchange ( "," exchanges+= Exchange)* ')' )?
+	'}';
+
+Condition:
+	'Condition' name=ID
+	'{'
+		('itemsRequired' '(' itemsRequired+=[UnityItem|ID] ( "," itemsRequired+=[UnityItem|ID])* ')' )?
+		('knowledgesRequired' '(' knowledgesRequired+=[UnityKnowledge|ID] ( "," knowledgesRequired+=[UnityKnowledge|ID])* ')' )?
+		('itemsMissing' '(' itemsMissing+=[UnityItem|ID] ( "," itemsMissing+=[UnityItem|ID])* ')' )?
+		('knowledgesMissing' '(' knowledgesMissing+=[UnityKnowledge|ID] ( "," knowledgesMissing+=[UnityKnowledge|ID])* ')' )?'}';
+
+
+
+Description:
+	'Description'
+	'{'
+		'text' description=STRING
+		('conditions' '(' conditions+= Condition ( "," conditions+= Condition)* ')' )?
+	'}';
+	
+	
+Interaction:
+	'Interaction' name=ID
+	'{'
+		('InteractionConditions' '(' InteractionConditions+=[Condition|ID] ( "," InteractionConditions+=[Condition|ID])* ')' )?
+		('choices' '(' choices+= Choice ( "," choices+= Choice)* ')' )?
+	'}';
+
+Choice:
+	'Choice' name=ID
+	'{'
+		start?='start'
+		finish?='finish'
+		('actions' '(' actions+= Action ( "," actions+= Action)* ')' )?
+		('StartConditions' '(' StartConditions+= Condition ( "," StartConditions+= Condition)* ')' )?
+		('FinishConditions' '(' FinishConditions+= Condition ( "," FinishConditions+= Condition)* ')' )?
+		'place' place=[Place]
+	'}';
+
+Exchange:
+	'Exchange' name=ID
+	'{'
+		('conditions' '(' conditions+= Condition ( "," conditions+= Condition)* ')' )?
+		('GainedItems' '(' GainedItems+=[UnityItem] ( "," GainedItems+=[UnityItem])* ')' )?
+		('ConsumedItems' '(' ConsumedItems+=[UnityItem] ( "," ConsumedItems+=[UnityItem])* ')' )?
+		('GainedKnowledges' '(' GainedKnowledges+=[UnityKnowledge] ( "," GainedKnowledges+=[UnityKnowledge])* ')' )?
+	'}';
+
+Action:
+	'Action' name=ID
+	'{'
+		('exchanges' '(' exchanges+= Exchange ( "," exchanges+= Exchange)* ')' )?
+	'}';

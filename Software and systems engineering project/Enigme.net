@@ -1,0 +1,17 @@
+net Enigme
+pl joueur (3)
+pl Questions (0)
+pl enigme (1)
+pl succes (0)
+pl echec (0)
+pl tentative (3)
+pl reussite (0)
+pl enigme2succesVisible (1)
+pl enigme2succesOpen (1)
+pl enigme2echecVisible (1)
+pl enigme2echecOpen (1)
+tr sphinx  enigme ->  Questions
+tr BonneReponse  Questions ->  enigme
+tr MauvaiseReponse  Questions ->  enigme
+tr enigme2succes  enigme2succesVisible?1 enigme2succesOpen?1 enigme ->  succes
+tr enigme2echec  enigme2echecVisible?1 enigme2echecOpen?1 enigme ->  echec

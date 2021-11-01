@@ -1,0 +1,23 @@
+[comment encoding = UTF-8 /]
+[module game2ltl('http://www.n7.fr/GAME')]
+
+
+[template public gameToLtl(aGame : Game)]
+[comment @main/]
+[file ('game.ltl', false, 'UTF-8')]
+op finished = ([let PlacesFin :  OrderedSet(Place) = aGame.getPlacesFin()]
+[for (p : Place | PlacesFin)]
+[if(p = PlacesFin-> first())] [p.name/] [else] \/ [p.name/] 
+[/if] [/for][/let]);
+
+[ '[' /][ ']' /] (finished => dead);
+[ '[' /][ ']' /] <> dead ;
+[ '[' /][ ']' /] (dead => finished);
+- <> finished;
+[/file]
+[/template]
+
+
+[query private getPlacesFin(aGame : Game) : OrderedSet(Place) = 
+			aGame.finish -> asOrderedSet()
+/]

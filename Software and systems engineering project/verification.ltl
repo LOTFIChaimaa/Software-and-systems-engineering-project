@@ -1,0 +1,4 @@
+
+[] <> EndGame;
+[] BonnesReponses => succes;
+- <> (succes /\ echec);

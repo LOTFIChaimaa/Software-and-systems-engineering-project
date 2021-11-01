@@ -1,0 +1,129 @@
+Game enigme { 
+	
+		
+	Player Explorateur {
+		inventorySize 3
+		unityitem (UnityTentative)
+		unityknowledge (UnityReussite)
+		currentPlace Enigme
+	}
+	
+	UnityItem UnityTentative {
+				Occurence 3
+				unity Tentative
+	}
+	
+	UnityKnowledge UnityReussite{
+				Occurence 0
+				unity Reussite
+	}
+	
+	
+	Place Enigme {
+			pngs (Sphinx)
+			arc_out (Enigme2Succes,Enigme2Echec)
+	}
+				
+	Place Succes {
+		arc_in (Enigme2Succes)
+	}
+		
+	Place Echec {
+		arc_in (Enigme2Echec)
+	}
+	
+	Item Tentative { 
+		visibility
+		Description {
+			text "Nombre de tentatives pour résoudre l'énigme"
+		}
+	}
+	
+	Knowledge Reussite {
+		Description {
+			text "Nombre de bonnes réponses"			
+		}
+	}
+	
+	
+	Png Sphinx {
+		visibility
+		interactions (
+			Interaction Questions {
+					choices (
+						Choice BonneReponse {
+							start
+							finish
+							actions (
+								Action BonnesReponsesAction {
+									exchanges (
+										Exchange GainReussite {
+											GainedKnowledges (UnityReussite)
+										}
+									)
+								}
+							)
+							place Enigme
+						},
+						Choice BonneReponse {
+							start
+							finish
+							actions (
+								Action MauvaisesReponses {
+									exchanges (
+										Exchange PerteTentative {
+											ConsumedItems (UnityTentative)
+										}
+									)
+								}
+							)
+							place Enigme
+						}
+								
+					)
+				}
+			)
+		Description {
+			text "Question"
+		}
+		place Enigme
+	}
+	
+
+	
+	Arc Enigme2Succes {
+			VisibilityConditions (
+				Condition CondSucces {
+					knowledgesRequired (UnityReussite)
+				}
+			)
+			open 
+			target Succes
+			origin Enigme
+			Description {
+				text "Chemin vers Succes"
+			}
+		}
+		
+	Arc Enigme2Echec {
+		VisibilityConditions (
+			Condition CondEchec {
+				itemsMissing (UnityTentative)
+			}
+		)
+		open 
+		target Succes
+		origin Enigme
+		Description {
+			text "Chemin vers Echec"
+		}
+	}
+	
+	
+	start Enigme
+	finish (Echec,Succes)
+	
+}
+
+	
+	
